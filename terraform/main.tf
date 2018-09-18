@@ -37,8 +37,9 @@ resource "aws_instance" "masternode" {
     }
 
     inline = [
+      "sudo yum update -y",
       "sudo yum install -y git",
-      "sudo yum groupinstall "Development Tools",
+      "sudo yum groupinstall 'Development Tools'",
       "git clone https://github.com/anonymousbitcoin/anon/",
       "cd ~/anon/anonutil && ./build.sh"
       
