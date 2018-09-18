@@ -18,13 +18,13 @@ resource "aws_key_pair" "anon_masternode_key_pair" {
 resource "aws_instance" "masternode" {
   ami = "ami-04681a1dbd79675a5"
   # TODO - Make instance_type a variable / input.
-  instance_type = "t2.micro"
+  instance_type = "t2.small"
   key_name = "anon_masternode_key"
 
   # FIXME - Write out private key to a file so user can SSH into node for troubleshooting or fine-tuning
   # Key name should go into .gitignore
   provisioner "local-exec" {
-    command = "mkdir -p assets && echo '${tls_private_key.anon_masternode_key.private_key_pem}' > assets/anon_masternode.pem"
+    command = "mkdir -p assets; rm -rf assets/*; echo '${tls_private_key.anon_masternode_key.private_key_pem}' > assets/anon_masternode.pem; chmod 400 assets/anon_masternode.pem"
   }
 
   # Simple bootstrap of Anon MN
@@ -39,7 +39,7 @@ resource "aws_instance" "masternode" {
     inline = [
       "sudo yum update -y",
       "sudo yum install -y git",
-      "sudo yum groupinstall 'Development Tools'",
+      "sudo yum groupinstall -y 'Development Tools'",
       "git clone https://github.com/anonymousbitcoin/anon/",
       "cd ~/anon/anonutil && ./build.sh"
       
