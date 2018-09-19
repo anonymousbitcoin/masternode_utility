@@ -1,6 +1,5 @@
 provider "aws" {
-  # TODO - Make region variable / input. MN's should be worldwide! Let user choose it.
-  region = "us-east-1"
+  region = "${var.aws_region}"
 }
 
 # Generate a random public-private RSA key pair for EC2 instance
@@ -14,22 +13,35 @@ resource "aws_key_pair" "anon_masternode_key_pair" {
   public_key = "${tls_private_key.anon_masternode_key.public_key_openssh}"
 }
 
+# Generate random RPC user for anon.conf
+resource "random_string" "rpcuser" {
+  length = 32
+  special = false
+}
+
+# Generate random RPC password for anon.conf
+resource "random_string" "rpcpassword" {
+  length = 32
+  special = false
+}
+
 # Create EC2 instance with generated key pair
 resource "aws_instance" "masternode" {
   ami = "ami-04681a1dbd79675a5"
-  # TODO - Make instance_type a variable / input.
-  instance_type = "t2.small"
+  instance_type = "${var.aws_ec2_instance_type}"
   key_name = "anon_masternode_key"
+  root_block_device = {
+    volume_type = "gp2"
+    volume_size = 100
+  }
 
-  # FIXME - Write out private key to a file so user can SSH into node for troubleshooting or fine-tuning
-  # Key name should go into .gitignore
   provisioner "local-exec" {
     command = "mkdir -p assets; rm -rf assets/*; echo '${tls_private_key.anon_masternode_key.private_key_pem}' > assets/anon_masternode.pem; chmod 400 assets/anon_masternode.pem"
   }
 
   # Simple bootstrap of Anon MN
   provisioner "remote-exec" {
-    
+
     connection = {
       type = "ssh"
       user = "ec2-user"
@@ -41,8 +53,17 @@ resource "aws_instance" "masternode" {
       "sudo yum install -y git",
       "sudo yum groupinstall -y 'Development Tools'",
       "git clone https://github.com/anonymousbitcoin/anon/",
-      "cd ~/anon/anonutil && ./build.sh"
-      
+      "cd ~/anon/anonutil && ./build.sh",
+      "cd ~/anon/anonutil && ./fetch-params.sh",
+      "mkdir ~/.anon && touch ~/.anon/anon.conf",
+      "echo rpcuser=${random_string.rpcuser.result} > ~/.anon/anon.conf",
+      "echo rpcpassword=${random_string.rpcpassword.result} >> ~/.anon/anon.conf",
+      "echo rpcallowip=127.0.0.1 >> ~/.anon/anon.conf",
+      "echo txindex=1 >> ~/.anon/anon.conf",
+      "echo masternode=1 >> ~/.anon/anon.conf",
+      "echo masternodeprivkey=${var.masternodeprivkey} >> ~/.anon/anon.conf",
+      "echo externalip=${aws_instance.masternode.public_ip} >> ~/.anon/anon.conf",
+      "~/anon/src/anond -daemon"
     ]
   }
 }
