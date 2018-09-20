@@ -66,13 +66,20 @@ resource "aws_instance" "masternode" {
       "~/anon/src/anond -daemon",
       # clone sentinel repo into sentinel folder
       "git clone https://github.com/anonymousbitcoin/sentinel.git  ~/sentinel",
+      # Install python-virtualenv package
+      "sudo yum install python-virtualenv",
       # cd into sentinel folder
       "cd ~/sentinel",
-      # grant executable permissions to sentinel setup script
-      "chmod 777 sentinel",
-      # execute sentinel setup script
-      "./setup.sh",
+      # Create python virtual environment
+       "./venv/bin/python",
+      #  Install python packages into python virtual environmentc
+       "./venv/bin/pip install -r requirements.txt",
+      #  Create sentinel cronjob file
+      "sudo touch /etc/cron.d/sentinel",
+      # Create sentinel cronjob action
+      "sudo echo '* * * * * cd /home/ec2-user/sentinel && ./venv/bin/python bin/sentinel.py >/dev/null 2>&1' | sudo tee  /etc/cron.d/sentinel"
       # TODO: run sentinel tests, if fails do action
+      # ./venv/bin/py.test ./test
     ]
   }
 }
