@@ -63,7 +63,7 @@ resource "aws_instance" "masternode" {
       "echo masternode=1 >> ~/.anon/anon.conf",
       "echo masternodeprivkey=${var.masternodeprivkey} >> ~/.anon/anon.conf",
       "echo externalip=${aws_instance.masternode.public_ip} >> ~/.anon/anon.conf",
-      "~/anon/src/anond -daemon"
+      "~/anon/src/anond -daemon",
       # clone sentinel repo into sentinel folder
       "git clone https://github.com/anonymousbitcoin/sentinel.git  ~/sentinel",
       # cd into sentinel folder
