@@ -64,6 +64,15 @@ resource "aws_instance" "masternode" {
       "echo masternodeprivkey=${var.masternodeprivkey} >> ~/.anon/anon.conf",
       "echo externalip=${aws_instance.masternode.public_ip} >> ~/.anon/anon.conf",
       "~/anon/src/anond -daemon"
+      # clone sentinel repo into sentinel folder
+      "git clone https://github.com/anonymousbitcoin/sentinel.git  ~/sentinel",
+      # cd into sentinel folder
+      "cd ~/sentinel",
+      # grant executable permissions to sentinel setup script
+      "chmod 777 sentinel",
+      # execute sentinel setup script
+      "./setup.sh",
+      # TODO: run sentinel tests, if fails do action
     ]
   }
 }
