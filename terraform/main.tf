@@ -63,7 +63,23 @@ resource "aws_instance" "masternode" {
       "echo masternode=1 >> ~/.anon/anon.conf",
       "echo masternodeprivkey=${var.masternodeprivkey} >> ~/.anon/anon.conf",
       "echo externalip=${aws_instance.masternode.public_ip} >> ~/.anon/anon.conf",
-      "~/anon/src/anond -daemon"
+      "~/anon/src/anond -daemon",
+      # clone sentinel repo into sentinel folder
+      "git clone https://github.com/anonymousbitcoin/sentinel.git  ~/sentinel",
+      # Install python-virtualenv package
+      "sudo yum install python-virtualenv",
+      # cd into sentinel folder
+      "cd ~/sentinel",
+      # Create python virtual environment
+       "./venv/bin/python",
+      #  Install python packages into python virtual environmentc
+       "./venv/bin/pip install -r requirements.txt",
+      #  Create sentinel cronjob file
+      "sudo touch /etc/cron.d/sentinel",
+      # Create sentinel cronjob action
+      "sudo echo '* * * * * cd /home/ec2-user/sentinel && ./venv/bin/python bin/sentinel.py >/dev/null 2>&1' | sudo tee  /etc/cron.d/sentinel"
+      # TODO: run sentinel tests, if fails do action
+      # ./venv/bin/py.test ./test
     ]
   }
 }
